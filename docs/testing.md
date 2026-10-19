@@ -10,10 +10,10 @@ macOS 14. Tests must use temporary skill repositories and explicit configuration
 paths, never the developer's live agent directories. Installer syntax is checked
 on the corresponding shells. Linux additionally runs `python3 tests/installers.py`: 
 network-free archive installation, explicit replacement, corrupt-checksum refusal,
-directory and broken-link protection, Android selection, and musl rejection. Repository write permission and user secrets are
+directory and broken-link protection, Android selection, and musl rejection. Windows runs `tests/installers.ps1` with a mocked download cmdlet and marker-byte archive, covering fresh installation, refusal of existing commands, explicit replacement, checksum failure preservation, and directory protection. The marker executable is never run. Repository write permission and user secrets are
 not given to test jobs. Linux also runs a real interactive zsh test for flags,
-subcommands, and newly created skill names. The test excludes insecure host
-completion directories and leaves zsh security checks enabled.
+subcommands, and newly created skill names. The test copies installed zsh functions into a private test directory and
+leaves zsh security checks enabled.
 
 `Build binaries` compiles release binaries and creates archives with SHA-256
 files on relevant main-branch pushes, version tags, or manual dispatch:

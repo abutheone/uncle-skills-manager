@@ -5,6 +5,7 @@ from pathlib import Path
 import pty
 import select
 import shlex
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -34,6 +35,12 @@ with tempfile.TemporaryDirectory(prefix="uncle-zsh-") as temporary:
     env = dict(os.environ, HOME=str(root), ZDOTDIR=str(root), TERM="xterm",
                UNCLE_SKILLS_CONFIG=str(config),
                PATH=str(binary.parent) + os.pathsep + os.environ["PATH"])
+    direct_env = dict(env, COMPLETE="zsh", _CLAP_COMPLETE_INDEX="2", _CLAP_IFS="\n")
+    direct = subprocess.run([str(binary), "--", "uncle-skills", "show", "live-f"],
+                            env=direct_env, capture_output=True, text=True)
+    assert direct.returncode == 0 and "live-first" in direct.stdout, (
+        "Dynamic completion transport failed", direct.stdout, direct.stderr
+    )
     process = subprocess.Popen(["zsh", "-f"], stdin=slave, stdout=slave, stderr=slave,
                                env=env, preexec_fn=terminal, close_fds=True)
     os.close(slave)
@@ -55,24 +62,26 @@ with tempfile.TemporaryDirectory(prefix="uncle-zsh-") as temporary:
                 return collected
         raise AssertionError(f"Expected {text!r}, received {collected!r}")
     try:
-        # Exclude insecure host completion directories; keep compinit's checks enabled.
+        # Use private copies of installed zsh functions so runner directory
+        # permissions cannot prompt, without disabling compinit security checks.
+        completion_dir = root / "zsh-functions"
+        completion_dir.mkdir(mode=0o700)
+        locations = subprocess.check_output(
+            ["zsh", "-fc", 'print -rl -- $fpath'], env=env, text=True
+        ).splitlines()
+        for location in locations:
+            directory = Path(location)
+            if not directory.is_dir():
+                continue
+            for item in directory.iterdir():
+                target = completion_dir / item.name
+                if item.is_file() and not item.is_symlink() and item.suffix != ".zwc" and not target.exists():
+                    shutil.copyfile(item, target)
+        assert (completion_dir / "compinit").is_file(), "Installed zsh functions missing"
         setup = root / "setup.zsh"
-        setup.write_text("""autoload -Uz compaudit
-unsafe_dirs=("${(@f)$(compaudit 2>/dev/null)}")
-safe_fpath=()
-for candidate in "${fpath[@]}"; do
-    usable=1
-    for bad in "${unsafe_dirs[@]}"; do
-        if [[ -n "$bad" && ( "$candidate" == "$bad" || "$candidate" == "$bad/"* ) ]]; then
-            usable=0
-        fi
-    done
-    (( usable )) && safe_fpath+=("$candidate")
-done
-fpath=("${safe_fpath[@]}")
-autoload -Uz compinit
-compinit -D
-source <(uncle-skills completions zsh)
+        setup.write_text("fpath=(" + shlex.quote(str(completion_dir)) + ")\n" + """autoload -Uz compinit
+compinit -D || return
+source <(uncle-skills completions zsh) || return
 printf 'READY\\n'
 """)
         send("source " + shlex.quote(str(setup)) + "\n")
