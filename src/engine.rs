@@ -209,7 +209,11 @@ fn tree_hash(root: &Path) -> Result<String> {
             }
         }
     }
-    Ok(format!("{:x}", digest.finalize()))
+    Ok(digest
+        .finalize()
+        .iter()
+        .map(|byte| format!("{byte:02x}"))
+        .collect())
 }
 
 fn exists(path: &Path) -> Result<bool> {
