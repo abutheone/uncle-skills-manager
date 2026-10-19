@@ -404,3 +404,17 @@ fn assets_larger_than_hash_buffer_copy_and_update_correctly() {
         content
     );
 }
+
+#[test]
+fn claude_reserved_names_are_rejected_before_deployment() {
+    for name in ["synced", "anthropic-skills"] {
+        let mut fixture = Fixture::new(LinkMethod::Copy);
+        fixture.config.agents[0].id = "claude-code".into();
+        fixture.skill(name);
+        let error = fixture.sync().unwrap_err().to_string();
+        assert!(error.contains("reserves"));
+        assert!(!fixture.target.exists());
+        assert!(!fixture.state.exists());
+        assert!(fixture.config.repo.join("skills").join(name).exists());
+    }
+}

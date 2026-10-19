@@ -55,8 +55,27 @@ with tempfile.TemporaryDirectory(prefix="uncle-zsh-") as temporary:
                 return collected
         raise AssertionError(f"Expected {text!r}, received {collected!r}")
     try:
-        # Use printf octal escapes so the ready marker occurs in output, not input echo.
-        send("autoload -Uz compinit; compinit -D; source <(uncle-skills completions zsh); printf '\\122\\105\\101\\104\\131\\012'\n")
+        # Exclude insecure host completion directories; keep compinit's checks enabled.
+        setup = root / "setup.zsh"
+        setup.write_text("""autoload -Uz compaudit
+unsafe_dirs=("${(@f)$(compaudit 2>/dev/null)}")
+safe_fpath=()
+for candidate in "${fpath[@]}"; do
+    usable=1
+    for bad in "${unsafe_dirs[@]}"; do
+        if [[ -n "$bad" && ( "$candidate" == "$bad" || "$candidate" == "$bad/"* ) ]]; then
+            usable=0
+        fi
+    done
+    (( usable )) && safe_fpath+=("$candidate")
+done
+fpath=("${safe_fpath[@]}")
+autoload -Uz compinit
+compinit -D
+source <(uncle-skills completions zsh)
+printf 'READY\\n'
+""")
+        send("source " + shlex.quote(str(setup)) + "\n")
         expect("READY\r\n")
         send("uncle-skills show live-f\t\n")
         expect("FIRST_CONTENT")

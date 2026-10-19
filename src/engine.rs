@@ -278,6 +278,15 @@ fn desired(config: &Config, state_path: &Path) -> Result<BTreeMap<PathBuf, Entry
         }
         let mut selected = agent.skills.clone().unwrap_or_else(|| names.clone());
         selected.sort();
+        if agent.id == "claude-code"
+            && selected
+                .iter()
+                .any(|name| name == "synced" || name == "anthropic-skills")
+        {
+            bail!(
+                "Claude reserves the skill names synced and anthropic-skills; rename or exclude them from this target"
+            );
+        }
         if let Some((method, previous)) = directories.get(&directory) {
             if method != &agent.method || previous != &selected {
                 bail!(

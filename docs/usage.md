@@ -29,7 +29,8 @@ method = "symlink"
 
 Edit local configuration to change selected skills or register another target;
 preview with `sync --dry-run`. `--target AGENT=PATH` during init overrides defaults.
-Known target IDs are codex, claude-code, pi, and gemini-cli. Agent detection is a
+Known target IDs are codex, claude-code, pi, and gemini-cli. Claude targets
+reject its reserved skill names `synced` and `anthropic-skills`. Agent detection is a
 PATH check, not proof of authentication or runtime skill discovery.
 
 Codex and Pi use the same default `.agents/skills` root. Identical shared targets

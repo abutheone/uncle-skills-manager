@@ -11,7 +11,9 @@ paths, never the developer's live agent directories. Installer syntax is checked
 on the corresponding shells. Linux additionally runs `python3 tests/installers.py`: 
 network-free archive installation, explicit replacement, corrupt-checksum refusal,
 directory and broken-link protection, Android selection, and musl rejection. Repository write permission and user secrets are
-not given to test jobs.
+not given to test jobs. Linux also runs a real interactive zsh test for flags,
+subcommands, and newly created skill names. The test excludes insecure host
+completion directories and leaves zsh security checks enabled.
 
 `Build binaries` compiles release binaries and creates archives with SHA-256
 files on relevant main-branch pushes, version tags, or manual dispatch:
