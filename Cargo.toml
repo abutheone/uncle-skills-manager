@@ -1,0 +1,31 @@
+[package]
+name = "uncle-skills-manager"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.89"
+description = "Keep portable agent skills linked across local coding agents"
+license = "MIT"
+repository = "https://github.com/abutheone/uncle-skills-manager"
+
+[[bin]]
+name = "uncle-skills"
+path = "src/main.rs"
+
+[dependencies]
+anyhow = "1.0.104"
+clap = { version = "4.6.7", features = ["derive", "env"] }
+clap_complete = { version = "=4.6.11", features = ["unstable-dynamic"] }
+dirs = "7.0.0"
+fs2 = "0.4.3"
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.154"
+serde_yaml_ng = "0.10.0"
+sha2 = "0.11.1"
+tempfile = "3.27.0"
+toml = "1.1.8"
+walkdir = "2.5.0"
+which = "8.0.6"
+
+[profile.release]
+lto = "thin"
+strip = true
